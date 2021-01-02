@@ -1,0 +1,27 @@
+{
+	"info": {
+		"_postman_id": "6c0e23e1-d547-44b9-9ad2-ac21c401b06b",
+		"name": "bill-planner",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Heartbeat",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{PROTO}}://{{HOST}}:{{PORT}}",
+					"protocol": "{{PROTO}}",
+					"host": [
+						"{{HOST}}"
+					],
+					"port": "{{PORT}}"
+				},
+				"description": "checking to see if the server is online"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
