@@ -17,7 +17,7 @@ impl std::fmt::Display for crate::Error {
 
 impl std::error::Error for crate::Error {}
 impl std::convert::From<rust_decimal::Error> for crate::Error {
-    fn from(error: rust_decimal::Error) -> crate::Error {
+    fn from(_error: rust_decimal::Error) -> crate::Error {
         Error::Unknown
     }
 }
@@ -27,7 +27,7 @@ pub fn rust_string_to_decimal(string: String) -> Result<rust_decimal::Decimal, c
     Ok(rust_decimal::Decimal::from_str(string.as_str())?)
 }
 
-pub fn sum_decimal_str(arr: Vec<String>) -> Result<String, crate::Error> {
+pub fn sum_rust_strings(arr: Vec<String>) -> Result<String, crate::Error> {
     // try to convert the vector of string to decimal
     Ok(arr
         .into_iter()
@@ -40,13 +40,13 @@ pub fn sum_decimal_str(arr: Vec<String>) -> Result<String, crate::Error> {
 #[no_mangle]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
 #[cfg(target_arch = "wasm32")]
-pub fn sum_strings_array(decimalJsArr: Vec<JsValue>) -> Result<String, JsValue> {
+pub fn sum_strings_array(decimal_js_arr: Vec<JsValue>) -> Result<String, JsValue> {
     use std::panic;
     use web_sys::console;
     match panic::catch_unwind(|| {
-        decimalJsArr
+        decimal_js_arr
             .into_iter()
-            .map(|maybeJsString: JsValue| maybeJsString.as_string().unwrap())
+            .map(|maybe_js_string: JsValue| maybe_js_string.as_string().unwrap())
             .map(|decimal: String| rust_string_to_decimal(decimal).unwrap())
             .sum::<rust_decimal::Decimal>()
             .to_string()
@@ -62,18 +62,24 @@ pub fn sum_strings_array(decimalJsArr: Vec<JsValue>) -> Result<String, JsValue> 
 
 #[cfg(test)]
 mod tests {
-    use crate::sum_decimal_str;
     #[test]
-    fn it_works() {
-        assert_eq!(
-            sum_decimal_str(vec![
-                String::from("1.1"),
-                String::from("2.2"),
-                String::from("3.3")
-            ])
-            .unwrap(),
-            String::from("6.6")
-        )
+    pub fn sum_rust_strings_valid_nopanic() {
+        use crate::sum_rust_strings;
+        // 2 to power of 28 elements
+        // equivelent to the summation
+        // of sum j where j=1 to 2^28 or 36,028,797,153,181,696.
+        // At this point, nodejs heap will run out of memory becase
+        // we have to allocate so many JSValues.
+        // we can safely say that we can sum a total of 268,435,456
+        // values at once, but should not do it because of memory and time.
+        // this test will take more than 60 seconds to complete
+        let capacity: usize = 268435456;
+        let mut values: Vec<String> = Vec::with_capacity(capacity);
+        for val in 1..capacity {
+            values.push(val.to_string())
+        }
+        let result = sum_rust_strings(values).unwrap();
+        println!("{}", result)
     }
 }
 #[cfg(test)]
@@ -86,9 +92,18 @@ pub mod test {
     #[wasm_bindgen_test]
     pub fn sum_js_strings_valid_nopanic() {
         use crate::sum_strings_array;
-        let mut values: Vec<JsValue> = Vec::new();
-        for val in 1..111 {
-            values.push(JsValue::from(format!("{0}.{0}", val.to_string())))
+        // 2 to power of 28 elements
+        // equivelent to the summation
+        // of sum j where j=1 to 2^27 or 9,007,199,321,849,856.
+        // At this point, nodejs heap will run out of memory becase
+        // we have to allocate so many JSValues.
+        // we can safely say that we can sum a total of 268,435,456
+        // values at once, but should not do it because of memory and time.
+        // this test will take more than 30 seconds to complete
+        let capacity: usize = 134217728;
+        let mut values: Vec<JsValue> = Vec::with_capacity(capacity);
+        for val in 1..capacity {
+            values.push(JsValue::from(val.to_string()))
         }
         let result = sum_strings_array(values).unwrap();
         console::log_1(&JsValue::from(result))

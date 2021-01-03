@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "test:rust": "cargo test --release",
+    "test:rust:verbose": "cargo test --release -- --nocapture",
     "test:node": "wasm-pack test --node",
     "build:node": "wasm-pack build --target nodejs --out-dir node --out-name index"
   },
