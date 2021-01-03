@@ -1,0 +1,13 @@
+{
+  "name": "shared",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test:node": "wasm-pack test --node",
+    "build:node": "wasm-pack build --target nodejs --out-dir node --out-name index"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -52,7 +52,11 @@ module.exports = {
   output: {
     filename: "index.js",
   },
-
+  resolve: {
+    alias: {
+      shared: path.join(__dirname, "..", "shared"),
+    },
+  },
   plugins: [
     new NodemonPlugin(nodemonConfig),
     new DotenvPlugin({ path: "./.env", systemvars: true, silent: false }),

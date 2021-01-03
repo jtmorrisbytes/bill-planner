@@ -31,6 +31,17 @@ eval("\n\n/**\n * Expose `arrayFlatten`.\n */\nmodule.exports = arrayFlatten\n\n
 
 /***/ }),
 
+/***/ "./src/guards/requireJSON.js":
+/*!***********************************!*\
+  !*** ./src/guards/requireJSON.js ***!
+  \***********************************/
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+eval("\n\nconst express = __webpack_require__(/*! express */ \"./node_modules/express/index.js\");\n\nmodule.exports = function (req, res, next) {\n  if (req.is(\"json\")) {\n    next();\n  } else {\n    res.status(415).send(\"Expecting JSON body\");\n  }\n};\n\n//# sourceURL=webpack://server/./src/guards/requireJSON.js?");
+
+/***/ }),
+
 /***/ "./src/hello.js":
 /*!**********************!*\
   !*** ./src/hello.js ***!
@@ -1340,7 +1351,7 @@ eval("module.exports = require(\"zlib\");;\n\n//# sourceURL=webpack://server/ext
 /*!**********************!*\
   !*** ./src/index.js ***!
   \**********************/
-eval("\n\nconst CONFIG = __webpack_require__(/*! dotenv */ \"./node_modules/dotenv/lib/main.js\").config().parsed || {};\n\nconst express = __webpack_require__(/*! express */ \"./node_modules/express/index.js\");\n\nconst massive = __webpack_require__(/*! massive */ \"massive\");\n\nconst hello = __webpack_require__(/*! ./hello */ \"./src/hello.js\").hello;\n\nconst api = express(); // when using webpack, environment variables must be\n// referenced using process.env.*\n\nconst NODE_ENV = CONFIG.NODE_ENV || \"development\";\nconst DATABASE_URL = CONFIG.DATABASE_URL || \"postgres://oqcdfrxpejilhs:83111f0d6c1e61920610965b17c59d54e124165d18319c5069510c6124928c74@ec2-52-203-49-58.compute-1.amazonaws.com:5432/d3mdek81dhvnec\";\nconst HOST = {}.HOST || \"0.0.0.0\";\nconst PORT = {}.PORT || 8000;\nmassive({\n  connectionString: DATABASE_URL,\n  ssl: {\n    rejectUnauthorized: false\n  }\n}).then(db => {\n  api.set(\"db\", db);\n  api.listen(PORT, HOST, () => {\n    console.log(`Listening on http://${HOST}:${PORT}`);\n  });\n}).catch(e => {\n  console.error(e);\n  console.dir(CONFIG);\n});\n\n//# sourceURL=webpack://server/./src/index.js?");
+eval("\n\nconst CONFIG = __webpack_require__(/*! dotenv */ \"./node_modules/dotenv/lib/main.js\").config().parsed || {};\n\nconst express = __webpack_require__(/*! express */ \"./node_modules/express/index.js\");\n\nconst massive = __webpack_require__(/*! massive */ \"massive\");\n\nconst hello = __webpack_require__(/*! ./hello */ \"./src/hello.js\").hello;\n\nconst api = express();\n\nconst requireJSON = __webpack_require__(/*! ./guards/requireJSON */ \"./src/guards/requireJSON.js\"); // when using webpack, environment variables must be\n// referenced using process.env.*\n\n\nconst NODE_ENV = CONFIG.NODE_ENV || \"development\";\nconst DATABASE_URL = CONFIG.DATABASE_URL || \"postgres://oqcdfrxpejilhs:83111f0d6c1e61920610965b17c59d54e124165d18319c5069510c6124928c74@ec2-52-203-49-58.compute-1.amazonaws.com:5432/d3mdek81dhvnec\";\nconst HOST = {}.HOST || \"0.0.0.0\";\nconst PORT = {}.PORT || 8000; // this api communicates using json\n\napi.use(express.json()); // require a json body for all requests that need a body\n\napi.patch(\"*\", requireJSON);\napi.put(\"*\", requireJSON);\napi.post(\"*\", requireJSON);\nmassive({\n  connectionString: DATABASE_URL,\n  ssl: {\n    rejectUnauthorized: false\n  }\n}).then(db => {\n  api.set(\"db\", db);\n  db.test().then(console.log);\n  api.listen(PORT, HOST, () => {\n    console.log(`Listening on http://${HOST}:${PORT}`);\n  });\n}).catch(e => {\n  console.error(e);\n  console.dir(CONFIG);\n});\n\n//# sourceURL=webpack://server/./src/index.js?");
 })();
 
 /******/ })()
