@@ -15,6 +15,7 @@ pub enum Error {
   TypeError {
     unexpected_type: &'static str,
     expected_types: &'static str,
+    value: Box<String>,
   },
   #[cfg(target_arch = "wasm32")]
   ConvertFromJsValueError {
@@ -41,11 +42,12 @@ impl std::fmt::Display for crate::Error {
       crate::Error::TypeError {
         unexpected_type,
         expected_types,
+        value,
       } => {
         write!(
           f,
-          "TypeError: unexpected type {}, expected type(s) {} ",
-          unexpected_type, expected_types
+          "TypeError: unexpected type {}, expected type(s) {}. {:#?} ",
+          unexpected_type, expected_types, value
         )
       }
       #[cfg(target_arch = "wasm32")]
@@ -77,6 +79,23 @@ impl From<crate::Error> for JsValue {
   }
 }
 #[cfg(target_arch = "wasm32")]
-pub fn string_from_JsValue(value: JsValue) -> String {
+pub fn string_from_jsvalue(value: JsValue) -> String {
   format!("{:#?}", value)
+}
+
+pub fn rust_string_to_decimal(string: String) -> Result<rust_decimal::Decimal, crate::Error> {
+  use std::str::FromStr;
+  Ok(rust_decimal::Decimal::from_str(string.as_str())?)
+}
+
+pub fn sum_rust_strings(arr: Vec<String>) -> Result<String, crate::Error> {
+  // try to convert the vector of string to decimal
+  Ok(
+    arr
+      .into_iter()
+      .map(|val: String| rust_string_to_decimal(val).unwrap())
+      .sum::<rust_decimal::Decimal>()
+      .to_string(),
+  )
+  // Ok(String::from(""))
 }
