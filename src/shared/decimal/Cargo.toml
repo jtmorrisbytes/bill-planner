@@ -21,7 +21,8 @@ console_error_panic_hook="0.1.6"
 wasm-bindgen-test = "0.3.19"
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-Oz", "--enable-mutable-globals"]
+#wasm-opt = ["-Oz", "--enable-mutable-globals"]
+wasm-opt = false
 
 [profile.dev]
 panic="unwind"
