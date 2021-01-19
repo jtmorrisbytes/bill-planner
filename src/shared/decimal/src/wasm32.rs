@@ -95,8 +95,12 @@ pub fn add(left: JsValue, right: JsValue) -> Result<String, JsValue> {
   Ok((try_from_jsvalue(left)? + try_from_jsvalue(right)?).to_string())
 }
 #[wasm_bindgen]
-pub fn subtract(left: JsValue, right: JsValue) -> Result<String, JsValue> {
+pub fn subtract_jsvalue(left: JsValue, right: JsValue) -> Result<String, JsValue> {
   Ok((try_from_jsvalue(left)? - try_from_jsvalue(right)?).to_string())
+}
+#[wasm_bindgen]
+pub fn subtract(left: f64, right: f64) -> Result<f64, JsValue> {
+  rust_decimal::Decimal::from_f64(left) - rust_decimal::Decimal::from_f64(n: f64)
 }
 #[wasm_bindgen]
 pub fn divide(left: JsValue, right: JsValue) -> Result<String, JsValue> {

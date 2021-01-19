@@ -1,94 +1,25 @@
 // because of how wasm_pack binds functions together into modules,
 // this should mimic a module
+pub mod error;
 
-use serde::Serialize;
+use error::Error;
 #[cfg(target_arch = "wasm32")]
 pub mod wasm32;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-#[derive(Debug, Serialize)]
-pub enum Error {
-  Unknown(&'static str),
-  #[cfg(target_arch = "wasm32")]
-  TypeError {
-    unexpected_type: &'static str,
-    expected_types: &'static str,
-    value: Box<String>,
-  },
-  #[cfg(target_arch = "wasm32")]
-  ConvertFromJsValueError {
-    from_type: &'static str,
-    to_type: &'static str,
-    value: Box<String>,
-  },
-}
-
-impl Default for Error {
-  fn default() -> Self {
-    Error::Unknown("default handler")
-  }
-}
-
-impl std::fmt::Display for crate::Error {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-    match *&self {
-      #[cfg(not(target_arch = "wasm32"))]
-      crate::Error::Unknown(message) => write!(f, "Unknown Error: {}", message),
-      #[cfg(target_arch = "wasm32")]
-      crate::Error::Unknown(message) => write!(f, "UnknownError: {}", message),
-      #[cfg(target_arch = "wasm32")]
-      crate::Error::TypeError {
-        unexpected_type,
-        expected_types,
-        value,
-      } => {
-        write!(
-          f,
-          "TypeError: unexpected type {}, expected type(s) {}. {:#?} ",
-          unexpected_type, expected_types, value
-        )
-      }
-      #[cfg(target_arch = "wasm32")]
-      crate::Error::ConvertFromJsValueError {
-        from_type,
-        to_type,
-        value,
-      } => write!(
-        f,
-        "ConvertFromJsValueError: Failed to convert type '{}' to type '{}'. Got value {:#?} ",
-        from_type, to_type, value
-      ),
-    }
-    // write!(f, "enum Error {{}}")
-  }
-}
-
-impl std::error::Error for crate::Error {}
-impl std::convert::From<rust_decimal::Error> for crate::Error {
-  fn from(_error: rust_decimal::Error) -> crate::Error {
-    Error::Unknown("")
-  }
-}
-
-#[cfg(target_arch = "wasm32")]
-impl From<crate::Error> for JsValue {
-  fn from(error: crate::Error) -> JsValue {
-    JsValue::from_serde(&error).unwrap()
-  }
-}
 #[cfg(target_arch = "wasm32")]
 pub fn string_from_jsvalue(value: JsValue) -> String {
   format!("{:#?}", value)
 }
 
-pub fn rust_string_to_decimal(string: String) -> Result<rust_decimal::Decimal, crate::Error> {
+pub fn rust_string_to_decimal(string: String) -> Result<rust_decimal::Decimal, Error> {
   use std::str::FromStr;
   Ok(rust_decimal::Decimal::from_str(string.as_str())?)
 }
 
-pub fn sum_rust_strings(arr: Vec<String>) -> Result<String, crate::Error> {
+pub fn sum_rust_strings(arr: Vec<String>) -> Result<String, Error> {
   // try to convert the vector of string to decimal
   Ok(
     arr
@@ -98,4 +29,54 @@ pub fn sum_rust_strings(arr: Vec<String>) -> Result<String, crate::Error> {
       .to_string(),
   )
   // Ok(String::from(""))
+}
+pub fn try_from_f64(float: f64) -> Result<rust_decimal::Decimal, Error> {
+  use rust_decimal::prelude::FromPrimitive;
+  match rust_decimal::Decimal::from_f64(float) {
+    Some(value) => Ok(value),
+    None => Err(Error::ConvertFromF64Error {
+      value: Box::new(float),
+    }),
+  }
+}
+pub fn try_from_string(string: &String) -> Result<rust_decimal::Decimal, Error> {
+  use std::str::FromStr;
+  match rust_decimal::Decimal::from_str(&string) {
+    Ok(decimal) => Ok(decimal),
+    Err(error) => Err(Error::ConvertFromStringError {
+      message: Box::new(format!("{}", error)),
+    }),
+  }
+}
+#[cfg(test)]
+pub mod tests {
+  use super::try_from_string;
+  use crate::Error;
+  #[test]
+  pub fn test_try_from_string() {
+    // this is Number.MAX_SAFE_INTEGER from javascript
+    let working_int: String = String::from("9007199254740991");
+    // the code is required to work up to three decimal places
+    let working_float: String = String::from("9007199254740991.99");
+    let invalid_format = String::from("hello");
+    let extremely_large_number = String::from("18014398509481983.98");
+
+    assert_eq!(try_from_string(&working_int).is_ok(), true);
+    assert_eq!(try_from_string(&working_float).is_ok(), true);
+    assert_eq!(try_from_string(&extremely_large_number).is_ok(), true);
+    println!("{}", try_from_string(&extremely_large_number).unwrap());
+
+    assert_eq!(
+      format!(
+        "{}",
+        try_from_string(&working_float).unwrap() + try_from_string(&working_float).unwrap()
+      ),
+      extremely_large_number
+    );
+    assert_eq!(try_from_string(&invalid_format).is_err(), true);
+    println!(
+      "assert invalid string is error: output: {}",
+      try_from_string(&invalid_format).unwrap_err()
+    )
+  }
 }
